@@ -15,7 +15,6 @@ withDefaults(defineProps<Props>(), {
   id: ''
 });
 
-// Двостороннє зв'язування значення поля
 const modelValue = defineModel<string>({ default: '' });
 </script>
 
@@ -35,12 +34,11 @@ const modelValue = defineModel<string>({ default: '' });
           }
         ]"
       />
-      <!-- Зелена галочка валідності з макету -->
       <span v-if="isValid && !error" class="valid-icon">✓</span>
     </div>
-    <!-- Вивід тексту помилки без alert -->
     <span v-if="error" class="error-message">{{ error }}</span>
   </div>
+
 </template>
 
 <style scoped lang="scss">

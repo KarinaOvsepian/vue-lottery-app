@@ -28,7 +28,43 @@ const touched = reactive<Record<keyof ParticipantFormData, boolean>>({
 });
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^\+380\d{9}$/;
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+
+  if (!digits) return '';
+
+  let cleanDigits = digits;
+  if (cleanDigits.startsWith('380')) {
+    cleanDigits = cleanDigits.slice(2);
+  } else if (cleanDigits.startsWith('38')) {
+    cleanDigits = cleanDigits.slice(2);
+  }
+
+  const part = cleanDigits.slice(0, 10);
+
+  let result = '+38 (';
+  if (part.length > 0) {
+    result += part.slice(0, 3);
+  }
+  if (part.length >= 3) {
+    result += ') ';
+  }
+  if (part.length > 3) {
+    result += part.slice(3, 6);
+  }
+  if (part.length > 6) {
+    result += '-' + part.slice(6, 8);
+  }
+  if (part.length > 8) {
+    result += '-' + part.slice(8, 10);
+  }
+
+  return result;
+};
+
+const handlePhoneInput = (val: string) => {
+  form.phone = formatPhoneNumber(val);
+};
 
 const validate = (): boolean => {
   let isValid = true;
@@ -68,11 +104,13 @@ const validate = (): boolean => {
     }
   }
 
+  const rawPhone = form.phone.replace(/[\s()-]/g, '');
+
   if (!form.phone.trim()) {
     errors.phone = 'This value is required';
     isValid = false;
-  } else if (!phoneRegex.test(form.phone.trim())) {
-    errors.phone = 'Format must be +380XXXXXXXXX (9 digits after code)';
+  } else if (!/^\+380\d{9}$/.test(rawPhone)) {
+    errors.phone = 'Format must be +38 (0XX) XXX-XX-XX';
     isValid = false;
   }
 
@@ -157,10 +195,11 @@ const handleSubmit = () => {
         <label for="reg-phone">Phone number</label>
         <AppInput
           id="reg-phone"
-          v-model="form.phone"
-          placeholder="Enter Phone number"
+          :model-value="form.phone"
+          placeholder="+38 (0__) ___-__-__"
           :error="errors.phone"
           :is-valid="touched.phone && !errors.phone"
+          @update:model-value="handlePhoneInput"
           @blur="touched.phone = true"
         />
       </div>
