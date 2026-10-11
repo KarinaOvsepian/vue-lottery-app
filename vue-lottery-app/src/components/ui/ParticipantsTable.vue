@@ -14,9 +14,24 @@ const emit = defineEmits<{
   (e: 'delete', participant: Participant): void;
 }>();
 
-const getSortIcon = (field: SortField) => {
-  if (props.currentSortField !== field) return '↕';
-  return props.currentSortOrder === 'asc' ? '↑' : '↓';
+const getSortIconClass = (field: SortField) => {
+  if (props.currentSortField !== field) {
+    return 'bi bi-arrow-down-up';
+  }
+
+  if (field === 'name') {
+    return props.currentSortOrder === 'asc'
+      ? 'bi bi-sort-alpha-down'
+      : 'bi bi-sort-alpha-up-alt';
+  }
+
+  if (field === 'dateOfBirth') {
+    return props.currentSortOrder === 'asc'
+      ? 'bi bi-sort-numeric-down'
+      : 'bi bi-sort-numeric-up-alt';
+  }
+
+  return 'bi bi-arrow-down-up';
 };
 </script>
 
@@ -26,12 +41,17 @@ const getSortIcon = (field: SortField) => {
       <thead>
       <tr>
         <th class="col-num">#</th>
+
         <th class="sortable" @click="emit('sort', 'name')">
-          Name <span class="sort-icon">{{ getSortIcon('name') }}</span>
+          Name
+          <i :class="['sort-icon', getSortIconClass('name')]"></i>
         </th>
+
         <th class="sortable" @click="emit('sort', 'dateOfBirth')">
-          Date of Birth <span class="sort-icon">{{ getSortIcon('dateOfBirth') }}</span>
+          Date of Birth
+          <i :class="['sort-icon', getSortIconClass('dateOfBirth')]"></i>
         </th>
+
         <th>Email</th>
         <th>Phone number</th>
         <th class="actions-header">Дії</th>
@@ -102,9 +122,14 @@ const getSortIcon = (field: SortField) => {
   }
 
   .sort-icon {
-    font-size: 11px;
-    margin-left: 4px;
-    color: #757575;
+    margin-left: 6px;
+    font-size: 14px;
+    color: #6c757d;
+    vertical-align: middle;
+  }
+
+  .sortable:hover .sort-icon {
+    color: #0d6efd;
   }
 
   .col-num {
