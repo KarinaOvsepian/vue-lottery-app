@@ -17,7 +17,7 @@
       </ul>
     </div>
     <div class="links">
-      <a href="https://github.com/ваший-логін/vue-lottery-app" target="_blank" rel="noopener noreferrer">
+      <a href="https://github.com/KarinaOvsepian/vue-lottery-app" target="_blank" rel="noopener noreferrer">
         Переглянути код на GitHub
       </a>
     </div>

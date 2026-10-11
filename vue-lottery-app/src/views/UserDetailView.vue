@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ServiceProvider } from '@/services/service-provider';
+import { useUsersStore } from '@/stores/users';
 import type { User } from '@/types/user';
 import AppButton from '@/components/ui/AppButton.vue';
 
 const props = defineProps<{ id: string }>();
 const router = useRouter();
+const usersStore = useUsersStore(); // Використовуємо стор
 
 const user = ref<User | null>(null);
 const isLoading = ref(true);
@@ -14,7 +15,7 @@ const error = ref('');
 
 onMounted(async () => {
   try {
-    user.value = await ServiceProvider.users.getById(Number(props.id));
+    user.value = await usersStore.getUserById(Number(props.id));
   } catch (err: any) {
     error.value = 'Користувача не знайдено';
   } finally {

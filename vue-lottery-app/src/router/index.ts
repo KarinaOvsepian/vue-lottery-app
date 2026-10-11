@@ -29,6 +29,12 @@ const router = createRouter({
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Users List' }
     },
     {
+      path: '/users/add',
+      name: 'user-add',
+      component: () => import('@/views/UserCreateView.vue'),
+      meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Create User' }
+    },
+    {
       path: '/users/:id',
       name: 'user-detail',
       component: () => import('@/views/UserDetailView.vue'),

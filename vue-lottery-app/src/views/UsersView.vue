@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUsersStore } from '@/stores/users';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppInput from '@/components/ui/AppInput.vue';
+import AppModal from '@/components/ui/AppModal.vue';
 
 const route = useRoute();
 const router = useRouter();
 const usersStore = useUsersStore();
 
+const limit = 10;
 const searchQuery = ref((route.query.q as string) || '');
 const currentPage = ref(Number(route.query.page) || 1);
-const limit = 10;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const isDeleteModalOpen = ref(false);
+const userToDelete = ref<{ id: number; name: string } | null>(null);
 
 const updateQueryUrl = (page: number, q: string) => {
   router.push({
@@ -24,71 +28,70 @@ const updateQueryUrl = (page: number, q: string) => {
   });
 };
 
-const loadData = async () => {
-  const skip = (currentPage.value - 1) * limit;
-  await usersStore.fetchUsers({ limit, skip, q: searchQuery.value });
-};
+watch(
+  () => route.query,
+  async (newQuery) => {
+    currentPage.value = Number(newQuery.page) || 1;
+    searchQuery.value = (newQuery.q as string) || '';
 
-const handleSearchInput = (val: string) => {
-  searchQuery.value = val;
+    const skip = (currentPage.value - 1) * limit;
+    await usersStore.fetchUsers({ limit, skip, q: searchQuery.value });
+  },
+  { immediate: true, deep: true }
+);
+
+const handleSearchInput = (val: string | number | undefined) => {
+  const query = String(val ?? '');
   if (debounceTimer) clearTimeout(debounceTimer);
 
   debounceTimer = setTimeout(() => {
-    currentPage.value = 1;
-    updateQueryUrl(currentPage.value, searchQuery.value);
+    updateQueryUrl(1, query);
   }, 500);
 };
 
 const changePage = (newPage: number) => {
-  if (newPage < 1 || newPage > Math.ceil(usersStore.totalUsers / limit)) return;
-  currentPage.value = newPage;
-  updateQueryUrl(currentPage.value, searchQuery.value);
+  const totalPages = Math.ceil(usersStore.totalUsers / limit);
+  if (newPage >= 1 && newPage <= totalPages) {
+    updateQueryUrl(newPage, searchQuery.value);
+  }
 };
 
-const handleDelete = async (id: number, name: string) => {
-  if (confirm(`Ви дійсно бажаєте видалити користувача ${name}?`)) {
+const openDeleteModal = (id: number, name: string) => {
+  userToDelete.value = { id, name };
+  isDeleteModalOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (userToDelete.value) {
     try {
-      await usersStore.deleteUser(id);
+      await usersStore.deleteUser(userToDelete.value.id);
       if (usersStore.usersList.length === 0 && currentPage.value > 1) {
-        currentPage.value--;
-        updateQueryUrl(currentPage.value, searchQuery.value);
+        updateQueryUrl(currentPage.value - 1, searchQuery.value);
       }
     } catch (e) {
-      alert('Помилка видалення');
+      console.error('Помилка видалення');
     }
   }
+  isDeleteModalOpen.value = false;
+  userToDelete.value = null;
 };
-
-watch(() => route.query, (newQuery) => {
-  const newPage = Number(newQuery.page) || 1;
-  const newQ = (newQuery.q as string) || '';
-
-  if (newPage !== currentPage.value || newQ !== searchQuery.value) {
-    currentPage.value = newPage;
-    searchQuery.value = newQ;
-    loadData();
-  }
-}, { deep: true });
-
-onMounted(() => {
-  loadData();
-});
 </script>
 
 <template>
   <div class="users-view">
     <div class="users-header">
       <h2>Список користувачів</h2>
+      <router-link to="/users/add">
+        <AppButton variant="success">Додати користувача</AppButton>
+      </router-link>
     </div>
 
     <div class="toolbar">
-      <div class="toolbar">
-        <AppInput
-          v-model="searchQuery"
-          placeholder="Пошук користувачів..."
-          @input="handleSearchInput(searchQuery)"
-        />
-      </div>
+      <AppInput
+        v-model="searchQuery"
+        placeholder="Пошук користувачів..."
+        @input="handleSearchInput(searchQuery)"
+      />
     </div>
 
     <div v-if="usersStore.isLoading" class="loading">Завантаження...</div>
@@ -120,7 +123,7 @@ onMounted(() => {
             <router-link :to="`/users/${user.id}`">
               <AppButton variant="secondary">Деталі</AppButton>
             </router-link>
-            <AppButton variant="danger" @click="handleDelete(user.id, user.firstName)">
+            <AppButton variant="danger" @click="openDeleteModal(user.id, user.firstName)">
               Видалити
             </AppButton>
           </td>
@@ -149,6 +152,20 @@ onMounted(() => {
         </AppButton>
       </div>
     </div>
+
+    <!-- Модальне вікно підтвердження видалення -->
+    <AppModal :is-open="isDeleteModalOpen" @close="isDeleteModalOpen = false">
+      <template #header>Підтвердження видалення</template>
+      <template #body>
+        <p v-if="userToDelete">
+          Ви дійсно бажаєте видалити користувача <strong>{{ userToDelete.name }}</strong>?
+        </p>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" @click="isDeleteModalOpen = false">Ні</AppButton>
+        <AppButton variant="danger" @click="confirmDelete">Так</AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>
 

@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useForm, useField } from 'vee-validate';
 import * as yup from 'yup';
-import { ServiceProvider } from '@/services/service-provider';
 import { useUsersStore } from '@/stores/users';
 import type { UpdateUserDto } from '@/types/user';
 import AppButton from '@/components/ui/AppButton.vue';
@@ -36,7 +35,7 @@ const { value: phone, errorMessage: phoneErr } = useField<string>('phone');
 
 onMounted(async () => {
   try {
-    const user = await ServiceProvider.users.getById(Number(props.id));
+    const user = await usersStore.getUserById(Number(props.id));
     resetForm({
       values: {
         firstName: user.firstName,
