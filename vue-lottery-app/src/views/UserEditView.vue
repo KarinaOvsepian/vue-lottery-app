@@ -5,7 +5,7 @@ import { useForm, useField } from 'vee-validate';
 import * as yup from 'yup';
 import { ServiceProvider } from '@/services/service-provider';
 import { useUsersStore } from '@/stores/users';
-import type { User, UpdateUserDto } from '@/types/user';
+import type { UpdateUserDto } from '@/types/user';
 import AppButton from '@/components/ui/AppButton.vue';
 import AppInput from '@/components/ui/AppInput.vue';
 
@@ -31,7 +31,7 @@ const { handleSubmit, resetForm } = useForm({
 const { value: firstName, errorMessage: firstNameErr } = useField<string>('firstName');
 const { value: lastName, errorMessage: lastNameErr } = useField<string>('lastName');
 const { value: email, errorMessage: emailErr } = useField<string>('email');
-const { value: age, errorMessage: ageErr } = useField<number>('age');
+const { value: age, errorMessage: ageErr } = useField<string | number>('age');
 const { value: phone, errorMessage: phoneErr } = useField<string>('phone');
 
 onMounted(async () => {
@@ -111,7 +111,7 @@ const onSubmit = handleSubmit(async (values) => {
 
         <div class="form-group" style="max-width: 150px;">
           <label>Вік</label>
-          <AppInput v-model.number="age" type="number" :error="ageErr" />
+          <AppInput v-model="age" type="number" :error="ageErr" />
         </div>
 
         <div class="actions">

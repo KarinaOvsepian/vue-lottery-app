@@ -82,11 +82,13 @@ onMounted(() => {
     </div>
 
     <div class="toolbar">
-      <AppInput
-        :model-value="searchQuery"
-        placeholder="Пошук користувачів..."
-        @update:model-value="handleSearchInput"
-      />
+      <div class="toolbar">
+        <AppInput
+          v-model="searchQuery"
+          placeholder="Пошук користувачів..."
+          @input="handleSearchInput(searchQuery)"
+        />
+      </div>
     </div>
 
     <div v-if="usersStore.isLoading" class="loading">Завантаження...</div>

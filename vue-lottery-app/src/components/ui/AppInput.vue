@@ -15,7 +15,7 @@ withDefaults(defineProps<Props>(), {
   id: ''
 });
 
-const modelValue = defineModel<string>({ default: '' });
+const modelValue = defineModel<string | number>();
 </script>
 
 <template>

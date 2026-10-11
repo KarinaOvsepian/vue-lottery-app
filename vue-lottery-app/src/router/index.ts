@@ -25,20 +25,20 @@ const router = createRouter({
     {
       path: '/users',
       name: 'users',
-      component: () => import('@/views/users/UsersView.vue'),
+      component: () => import('@/views/UsersView.vue'),
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Users List' }
     },
     {
       path: '/users/:id',
       name: 'user-detail',
-      component: () => import('@/views/users/UserDetailView.vue'),
+      component: () => import('@/views/UserDetailView.vue'),
       props: true,
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'User Details' }
     },
     {
       path: '/users/:id/edit',
       name: 'user-edit',
-      component: () => import('@/views/users/UserEditView.vue'),
+      component: () => import('@/views/UserEditView.vue'),
       props: true,
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Edit User' }
     },

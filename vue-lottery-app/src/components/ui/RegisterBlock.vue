@@ -199,7 +199,7 @@ const handleSubmit = () => {
           placeholder="+38 (0__) ___-__-__"
           :error="errors.phone"
           :is-valid="touched.phone && !errors.phone"
-          @update:model-value="handlePhoneInput"
+          @input="handlePhoneInput"
           @blur="touched.phone = true"
         />
       </div>
