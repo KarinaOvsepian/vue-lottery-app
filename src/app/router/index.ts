@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/entities/session/model/auth.ts';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,31 +6,31 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/pages/home/HomeView.vue'),
+      component: () => import('../../pages/home/HomeView.vue'),
       meta: { layout: 'DefaultLayout', title: 'Home' }
     },
     {
       path: '/about',
       name: 'about',
-      component: () => import('@/pages/about/AboutView.vue'),
+      component: () => import('../../pages/about/AboutView.vue'),
       meta: { layout: 'DefaultLayout', title: 'About Author' }
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/pages/login/LoginView.vue'),
+      component: () => import('../../pages/login/LoginView.vue'),
       meta: { layout: 'AuthLayout', title: 'Login' }
     },
     {
       path: '/users',
       name: 'users',
-      component: () => import('@/pages/users/UsersView.vue'),
+      component: () => import('../../pages/users/UsersView.vue'),
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Users List' }
     },
     {
       path: '/users/add',
       name: 'user-add',
-      component: () => import('@/pages/user-create/UserCreateView.vue'),
+      component: () => import('../../pages/user-create/UserCreateView.vue'),
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Create User' }
     },
     {
@@ -44,14 +43,14 @@ const router = createRouter({
     {
       path: '/users/:id/edit',
       name: 'user-edit',
-      component: () => import('@/pages/user-edit/UserEditView.vue'),
+      component: () => import('../../pages/user-edit/UserEditView.vue'),
       props: true,
       meta: { layout: 'DefaultLayout', requiresAuth: true, title: 'Edit User' }
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      component: () => import('@/pages/not-found/NotFoundView.vue'),
+      component: () => import('../../pages/not-found/NotFoundView.vue'),
       meta: { layout: 'DefaultLayout', title: '404 - Not Found' }
     }
   ]
