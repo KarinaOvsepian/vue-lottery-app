@@ -1,29 +1,45 @@
+<!-- src/widgets/app-header/ui/AppHeader.vue -->
 <script setup lang="ts">
-import Logo from './Logo.vue';
-import AppNavigation from './AppNavigation.vue';
+import { useRouter } from 'vue-router'
+import { useSessionStore } from '@/entities/session'
+import { useThemeStore } from '@/entities/theme'
+import { AppButton } from '@/shared/ui'
+
+const router = useRouter()
+const sessionStore = useSessionStore()
+const themeStore = useThemeStore()
+
+function handleLogout() {
+  sessionStore.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
   <header class="app-header">
-    <div class="header-container">
-      <Logo />
-      <AppNavigation />
+    <div class="header-content">
+      <router-link to="/" class="logo">Vue Lottery App</router-link>
+      <nav class="nav-links">
+        <router-link to="/">Головна</router-link>
+        <router-link to="/about">Про автора</router-link>
+        <router-link to="/users" v-if="sessionStore.isAuthenticated">Користувачі</router-link>
+      </nav>
+      <div class="header-actions">
+        <AppButton
+          :label="themeStore.currentTheme === 'dark' ? 'Світла' : 'Темна'"
+          severity="secondary"
+          @click="themeStore.toggleTheme"
+        />
+        <AppButton
+          v-if="sessionStore.isAuthenticated"
+          label="Вийти"
+          severity="danger"
+          @click="handleLogout"
+        />
+        <router-link v-else to="/login">
+          <AppButton label="Увійти" />
+        </router-link>
+      </div>
     </div>
   </header>
 </template>
-
-<style scoped>
-.app-header {
-  background-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 15px 0;
-}
-.header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-</style>

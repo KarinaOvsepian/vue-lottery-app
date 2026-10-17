@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import AppHeader from '@/widgets/app-header/AppHeader.vue';
+import Toast from 'primevue/toast'
 </script>
 
 <template>
+  <Toast />
+  <router-view />
   <div class="default-layout">
     <AppHeader />
     <main class="main-content">

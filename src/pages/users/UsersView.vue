@@ -1,281 +1,117 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUsersStore } from '@/entities/user/model/users.ts'
-import AppButton from '@/shared/ui/AppButton.vue'
-import AppInput from '@/shared/ui/AppInput.vue'
-import AppModal from '@/shared/ui/AppModal.vue'
-import WinnersBlock from '@/widgets/winners-block/WinnersBlock.vue';
-import type { User } from '@/entities/user/model/user.ts'
+import { storeToRefs } from 'pinia'
+import { useToast } from 'primevue/usetoast'
+import Column from 'primevue/column'
+import { useUsersStore, type User } from '@/entities/user'
+import { AppButton, AppInput, AppTable, AppConfirmDialog } from '@/shared/ui'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const usersStore = useUsersStore()
 
+const { users, total, isLoading } = storeToRefs(usersStore)
+
 const limit = 10
-const searchQuery = ref((route.query.q as string) || '')
 const currentPage = ref(Number(route.query.page) || 1)
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
+const searchQuery = ref((route.query.q as string) || '')
+const isConfirmOpen = ref(false)
+const selectedUser = ref<User | null>(null)
 
-const WINNERS_STORAGE_KEY = 'lottery_winners'
-const winners = ref<User[]>(JSON.parse(localStorage.getItem(WINNERS_STORAGE_KEY) || '[]'))
+const WINNERS_KEY = 'lottery_winners'
+const winners = ref<User[]>(JSON.parse(localStorage.getItem(WINNERS_KEY) || '[]'))
 
-watch(
-  winners,
-  (newWinners) => {
-    localStorage.setItem(WINNERS_STORAGE_KEY, JSON.stringify(newWinners))
-  },
-  { deep: true },
-)
+watch(winners, (val) => localStorage.setItem(WINNERS_KEY, JSON.stringify(val)), { deep: true })
 
-const handlePickWinner = () => {
-  const availableCandidates = usersStore.usersList.filter(
-    (u) => !winners.value.some((w) => w.id === u.id),
-  )
-
-  if (availableCandidates.length > 0 && winners.value.length < 3) {
-    const randomIndex = Math.floor(Math.random() * availableCandidates.length)
-    const selectedWinner = availableCandidates[randomIndex]
-    if (selectedWinner) {
-      winners.value.push(selectedWinner)
-    }
+function handlePickWinner() {
+  const candidates = users.value.filter((u) => !winners.value.some((w) => w.id === u.id))
+  if (candidates.length > 0 && winners.value.length < 3) {
+    const winner = candidates[Math.floor(Math.random() * candidates.length)]
+    if (winner) winners.value.push(winner)
   }
 }
 
-const handleRemoveWinner = (id: number) => {
+function handleRemoveWinner(id: number) {
   winners.value = winners.value.filter((w) => w.id !== id)
 }
 
-const isDeleteModalOpen = ref(false)
-const userToDelete = ref<{ id: number; name: string } | null>(null)
-
-const updateQueryUrl = (page: number, q: string) => {
-  router.push({
-    path: '/users',
-    query: {
-      page: page > 1 ? page : undefined,
-      q: q || undefined,
-    },
-  })
+function updateUrl(page: number, q: string) {
+  router.push({ query: { page: page > 1 ? page : undefined, q: q || undefined } })
 }
 
 watch(
   () => route.query,
-  async (newQuery) => {
-    currentPage.value = Number(newQuery.page) || 1
-    searchQuery.value = (newQuery.q as string) || ''
-
+  async (q) => {
+    currentPage.value = Number(q.page) || 1
+    searchQuery.value = (q.q as string) || ''
     const skip = (currentPage.value - 1) * limit
-    await usersStore.fetchUsers({ limit, skip, q: searchQuery.value })
+    await usersStore.fetchUsers(limit, skip, searchQuery.value)
   },
-  { immediate: true, deep: true },
+  { immediate: true, deep: true }
 )
 
-const handleSearchInput = (val: string | number | undefined) => {
-  const query = String(val ?? '')
-  if (debounceTimer) clearTimeout(debounceTimer)
-
-  debounceTimer = setTimeout(() => {
-    updateQueryUrl(1, query)
-  }, 500)
+function openDeleteModal(user: User) {
+  selectedUser.value = user
+  isConfirmOpen.value = true
 }
 
-const changePage = (newPage: number) => {
-  const totalPages = Math.ceil(usersStore.totalUsers / limit)
-  if (newPage >= 1 && newPage <= totalPages) {
-    updateQueryUrl(newPage, searchQuery.value)
-  }
-}
-
-const openDeleteModal = (id: number, name: string) => {
-  userToDelete.value = { id, name }
-  isDeleteModalOpen.value = true
-}
-
-const confirmDelete = async () => {
-  if (userToDelete.value) {
+async function confirmDelete() {
+  if (selectedUser.value) {
     try {
-      await usersStore.deleteUser(userToDelete.value.id)
-
-      handleRemoveWinner(userToDelete.value.id)
-
-      if (usersStore.usersList.length === 0 && currentPage.value > 1) {
-        updateQueryUrl(currentPage.value - 1, searchQuery.value)
-      }
+      await usersStore.removeUser(selectedUser.value.id)
+      handleRemoveWinner(selectedUser.value.id)
+      toast.add({ severity: 'info', summary: 'Видалено', detail: 'Користувача видалено', life: 3000 })
     } catch {
-      console.error('Помилка видалення')
+      toast.add({ severity: 'error', summary: 'Помилка', detail: 'Не вдалося видалити', life: 3000 })
     }
   }
-  isDeleteModalOpen.value = false
-  userToDelete.value = null
+  isConfirmOpen.value = false
 }
 </script>
 
 <template>
-  <div class="users-view">
-    <div class="users-header">
-      <h2>Список користувачів</h2>
-      <router-link to="/users/add">
-        <AppButton variant="success">Додати користувача</AppButton>
+  <div class="users-page">
+    <div class="page-header">
+      <h2>Користувачі</h2>
+      <router-link to="/users/create">
+        <AppButton label="Додати користувача" severity="success" />
       </router-link>
     </div>
 
     <WinnersBlock
       :winners="winners"
-      :participants="usersStore.usersList"
+      :participants="users"
       @pick-winner="handlePickWinner"
       @remove-winner="handleRemoveWinner"
     />
 
-    <div class="toolbar" style="margin-top: 20px">
-      <AppInput
-        v-model="searchQuery"
-        placeholder="Пошук користувачів..."
-        @input="handleSearchInput(searchQuery)"
-      />
+    <div class="toolbar">
+      <AppInput v-model="searchQuery" placeholder="Пошук..." @update:model-value="updateUrl(1, $event)" />
     </div>
 
-    <div v-if="usersStore.isLoading" class="loading">Завантаження...</div>
-    <div v-else-if="usersStore.error" class="error">{{ usersStore.error }}</div>
+    <AppTable :value="users" :loading="isLoading">
+      <Column field="id" header="ID" />
+      <Column field="firstName" header="Ім'я" />
+      <Column field="lastName" header="Прізвище" />
+      <Column field="email" header="Email" />
+      <Column field="phone" header="Телефон" />
+      <Column header="Дії">
+        <template #body="{ data }">
+          <router-link :to="`/users/${data.id}`">
+            <AppButton label="Деталі" severity="secondary" />
+          </router-link>
+          <AppButton label="Видалити" severity="danger" @click="openDeleteModal(data)" />
+        </template>
+      </Column>
+    </AppTable>
 
-    <div v-else class="table-container">
-      <table class="users-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Ім'я</th>
-            <th>Email</th>
-            <th>Телефон</th>
-            <th>Вік</th>
-            <th class="actions">Дії</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in usersStore.usersList" :key="user.id">
-            <td>{{ user.id }}</td>
-            <td>
-              <img v-if="user.image" :src="user.image" class="avatar" alt="avatar" />
-              {{ user.firstName }} {{ user.lastName }}
-            </td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.phone }}</td>
-            <td>{{ user.age }}</td>
-            <td class="action-buttons">
-              <router-link :to="`/users/${user.id}`">
-                <AppButton variant="secondary">Деталі</AppButton>
-              </router-link>
-              <AppButton variant="danger" @click="openDeleteModal(user.id, user.firstName)">
-                Видалити
-              </AppButton>
-            </td>
-          </tr>
-          <tr v-if="usersStore.usersList.length === 0">
-            <td colspan="6" class="empty">Користувачів не знайдено</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="pagination" v-if="usersStore.totalUsers > limit">
-        <AppButton :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-          Попередня
-        </AppButton>
-        <span class="page-info">
-          Сторінка {{ currentPage }} з {{ Math.ceil(usersStore.totalUsers / limit) }}
-        </span>
-        <AppButton
-          :disabled="currentPage === Math.ceil(usersStore.totalUsers / limit)"
-          @click="changePage(currentPage + 1)"
-        >
-          Наступна
-        </AppButton>
-      </div>
-    </div>
-
-    <AppModal :is-open="isDeleteModalOpen" @close="isDeleteModalOpen = false">
-      <template #header>Підтвердження видалення</template>
-      <template #body>
-        <p v-if="userToDelete">
-          Ви дійсно бажаєте видалити користувача <strong>{{ userToDelete.name }}</strong
-          >?
-        </p>
-      </template>
-      <template #footer>
-        <AppButton variant="secondary" @click="isDeleteModalOpen = false">Ні</AppButton>
-        <AppButton variant="danger" @click="confirmDelete">Так</AppButton>
-      </template>
-    </AppModal>
+    <AppConfirmDialog
+      v-model:visible="isConfirmOpen"
+      title="Видалення"
+      :message="`Видалити користувача ${selectedUser?.firstName}?`"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
-
-<style scoped>
-.users-view {
-  width: 100%;
-}
-.users-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.toolbar {
-  margin-bottom: 20px;
-  max-width: 400px;
-}
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  padding: 15px;
-}
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-.users-table th,
-.users-table td {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
-}
-.users-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #444;
-}
-.avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  vertical-align: middle;
-  margin-right: 10px;
-}
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-.empty {
-  text-align: center;
-  color: #888;
-  padding: 20px !important;
-}
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  font-size: 1.2rem;
-}
-.error {
-  color: #d32f2f;
-}
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-.page-info {
-  font-weight: 500;
-}
-</style>
