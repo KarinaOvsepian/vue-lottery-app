@@ -1,69 +1,28 @@
 <script setup lang="ts">
-interface Props {
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
-  type?: 'button' | 'submit' | 'reset';
-  disabled?: boolean;
-}
+import Button from 'primevue/button'
 
-withDefaults(defineProps<Props>(), {
-  variant: 'primary',
-  type: 'button',
-  disabled: false
-});
+defineProps<{
+  label?: string
+  loading?: boolean
+  disabled?: boolean
+  severity?: 'primary' | 'secondary' | 'success' | 'info' | 'warn' | 'help' | 'danger' | 'contrast'
+  type?: 'button' | 'submit' | 'reset'
+}>()
 
-const emit = defineEmits<{
-  (e: 'click', event: MouseEvent): void;
-}>();
+defineEmits<{
+  click: [event: MouseEvent]
+}>()
 </script>
 
 <template>
-  <button
-    :type="type"
+  <Button
+    :label="label"
+    :loading="loading"
     :disabled="disabled"
-    :class="['app-btn', `app-btn--${variant}`]"
-    @click="emit('click', $event)"
+    :severity="severity"
+    :type="type || 'button'"
+    @click="$emit('click', $event)"
   >
     <slot />
-  </button>
+  </Button>
 </template>
-
-<style scoped lang="scss">
-.app-btn {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 4px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  &--primary {
-    background-color: #29b6f6;
-    color: #fff;
-    &:hover:not(:disabled) {
-      background-color: #0288d1;
-    }
-  }
-
-  &--danger {
-    background-color: #ef5350;
-    color: #fff;
-    &:hover:not(:disabled) {
-      background-color: #d32f2f;
-    }
-  }
-
-  &--secondary {
-    background-color: #e0e0e0;
-    color: #333;
-    &:hover:not(:disabled) {
-      background-color: #bdbdbd;
-    }
-  }
-}
-</style>

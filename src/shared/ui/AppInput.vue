@@ -1,98 +1,48 @@
 <script setup lang="ts">
-interface Props {
-  type?: string;
-  placeholder?: string;
-  error?: string;
-  isValid?: boolean;
-  id?: string;
-}
+import InputText from 'primevue/inputtext'
 
-withDefaults(defineProps<Props>(), {
-  type: 'text',
-  placeholder: '',
-  error: '',
-  isValid: false,
-  id: ''
-});
+defineProps<{
+  modelValue?: string | number
+  label?: string
+  placeholder?: string
+  type?: string
+  error?: string
+  disabled?: boolean
+}>()
 
-const modelValue = defineModel<string | number>();
+defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 </script>
 
 <template>
-  <div class="app-input-wrapper">
-    <div class="app-input-container">
-      <input
-        :id="id"
-        v-model="modelValue"
-        :type="type"
-        :placeholder="placeholder"
-        :class="[
-          'app-input',
-          {
-            'app-input--error': error,
-            'app-input--valid': isValid && !error
-          }
-        ]"
-      />
-      <span v-if="isValid && !error" class="valid-icon">✓</span>
-    </div>
-    <span v-if="error" class="error-message">{{ error }}</span>
+  <div class="app-input-field">
+    <label v-if="label" class="app-input-label">{{ label }}</label>
+    <InputText
+      :value="modelValue"
+      :type="type || 'text'"
+      :placeholder="placeholder"
+      :invalid="!!error"
+      :disabled="disabled"
+      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+    />
+    <small v-if="error" class="app-input-error">{{ error }}</small>
   </div>
-
 </template>
 
-<style scoped lang="scss">
-.app-input-wrapper {
+<style scoped>
+.app-input-field {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  margin-bottom: 12px;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
 }
-
-.app-input-container {
-  position: relative;
-  width: 100%;
+.app-input-label {
+  font-weight: 500;
+  font-size: 0.875rem;
 }
-
-.app-input {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  outline: none;
-  background-color: #fbfbfb;
-  transition: border-color 0.2s;
-
-  &:focus {
-    background-color: #fff;
-    border-color: #80bdff;
-  }
-
-  &--error {
-    border-color: #e57373 !important;
-    background-color: #fff;
-  }
-
-  &--valid {
-    border-color: #4db6ac !important;
-    background-color: #fff;
-    padding-right: 32px;
-  }
-}
-
-.valid-icon {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #2e7d32;
-  font-weight: bold;
-}
-
-.error-message {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #e57373;
+.app-input-error {
+  color: var(--p-red-500, #ef4444);
+  font-size: 0.75rem;
 }
 </style>
