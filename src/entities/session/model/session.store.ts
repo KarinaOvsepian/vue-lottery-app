@@ -23,7 +23,6 @@ export const useSessionStore = defineStore(
     }
 
     async function login(credentials: LoginCredentials): Promise<AuthResponse> {
-      // Отримання сервісу авторизації через ServiceProvider з shared/api
       const authService = ServiceProvider.get<any>('auth')
       const data: AuthResponse = await authService.login(credentials)
       setSession(data.accessToken)
